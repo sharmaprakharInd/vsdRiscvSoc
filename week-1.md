@@ -71,3 +71,7 @@ Disassemble the ELF with objdump
 ```bash
 riscv32-unknown-elf-objdump -d -M numeric,no-aliases hello.elf > hello_disassembly.txt 
 ```
+## Rcomplied Everything
+```bash
+riscv32-unknown-elf-gcc -g -o hello.elf hello.c
+```
