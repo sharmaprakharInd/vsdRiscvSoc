@@ -357,3 +357,53 @@ asm volatile	Ensures assembly is not optimized/reordered.
 "=r"(var)	Output operand in a register, mapped to var.
 csrr	RISC-V CSR read instruction.
 cycle	Hardware counter for cycles since reset (CSR 0xC00).
+## 10- Memory-Mapped I/O GPIO Toggle Demo
+A bare-metal C example demonstrating how to safely toggle a GPIO register using memory-mapped I/O.
+
+Overview
+This repository contains a minimal example showing proper techniques for accessing hardware registers in embedded systems, specifically:
+
+Using volatile to prevent compiler optimization of hardware accesses
+
+Proper pointer casting for memory-mapped I/O
+
+Alignment considerations for hardware registers
+
+Usage
+The main example demonstrates toggling a GPIO register located at address 0x10012000:
+
+```c
+#include <stdint.h>
+
+// Define GPIO register as volatile pointer to uint32_t
+volatile uint32_t * const gpio = (volatile uint32_t *)0x10012000;
+
+void toggle_gpio() {
+    *gpio = 0x1;  // Write to GPIO register
+    
+    // Optional read-back to ensure write completion
+    (void)*gpio;  // Cast to void to prevent unused value warning
+}
+```
+Key Concepts
+volatile Keyword:
+
+Essential for hardware register access
+
+Prevents compiler from optimizing away or reordering accesses
+
+Indicates value may change outside program control
+
+Alignment:
+
+Hardware registers typically require natural alignment
+
+Address 0x10012000 is properly aligned for 32-bit access (divisible by 4)
+
+Pointer Declaration:
+
+volatile uint32_t * const creates a constant pointer to volatile data
+
+Pointer itself cannot be changed (const)
+
+Pointed-to data is volatile (can't be optimized)
