@@ -121,7 +121,7 @@ riscv32-unknown-elf-gcc -g -o hello.elf hello.c
 - `t0`–`t6`: **Caller-saved** registers
 - `ra`: Return address
 - `sp`: Stack pointer
-## 6- RISC-V Debugging with GDB and QEMU
+## 6- RISC-V Debugging with GDB
 Objective: Learn to debug a RISC-V ELF binary using riscv32-unknown-elf-gdb and QEMU.
 
 Steps
@@ -161,4 +161,64 @@ Register a0 should contain 14 (bytes printed).
 
 Use disassemble to see RISC-V instructions like lui, addi, jal
 
+### Screenshots:
+
+We did not see the expected results as we were not using Emulator.
+This has been updated in task 7.
+
+## 7- RISC-V Debugging with GDB and QEMU
+Objective: Learn to debug a RISC-V ELF binary using riscv32-unknown-elf-gdb.
+
+Steps
+1. Compile the Program
+Compile your C code (hello.c) with debug symbols:
+
+```bash
+riscv32-unknown-elf-gcc -g -o hello.elf hello.c
+```
+2. Launch QEMU in Debug Mode
+
+Run the binary and pause for GDB connection:
+
+```bash
+qemu-riscv32 -g 1234 hello.elf
+```
+3. Debug with GDB
+In a new terminal:
+
+```bash
+riscv32-unknown-elf-gdb hello.elf
+```
+Inside GDB:
+
+```gdb
+(gdb) target remote :1234   # Connect to QEMU
+(gdb) break main            # Set breakpoint at main()
+(gdb) continue              # Start execution
+(gdb) next                  # Step through code
+(gdb) info registers        # Inspect RISC-V registers
+(gdb) disassemble           # View assembly
+```
+Key Commands Cheatsheet
+Command	Action
+break main	Set breakpoint at main().
+next (n)	Execute next line (step over).
+step (s)	Step into functions.
+info reg	Show all registers.
+x/s ADDRESS	Examine memory as a string.
+disassemble	View assembly of current function.
+Expected Output
+After running
+```c
+printf("Hello, RISC-V!\n"):
+```
+
+Register a0 should contain 14 (bytes printed).
+
+Use disassemble to see RISC-V instructions like lui, addi, jal.
+
+Troubleshooting
+QEMU not found: Install with sudo apt install qemu-user-static.
+
+No debug symbols: Recompile with -g flag.
 ### Screenshots:
