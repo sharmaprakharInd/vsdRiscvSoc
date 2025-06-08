@@ -1,0 +1,65 @@
+# crt0.S - Bare-metal RISC-V startup code
+
+.section .text.init
+.global _start
+.type _start, @function
+
+_start:
+    # 1. Set up the Stack Pointer (sp)
+    # The stack grows downwards. We typically place the stack at the
+    # end of the available RAM, or a dedicated stack region.
+    # The symbol `_stack_end` would be defined in your linker script.
+    # For simplicity, we'll use a placeholder `0x80008000` which would be
+    # the top of a hypothetical RAM region. In a real project, this would
+    # come from your linker script.
+    li sp, 0x80008000  # Load immediate: sp = 0x80008000 (top of RAM)
+
+    # 2. Initialize the Global Pointer (gp)
+    # The global pointer is used for efficient access to global and static
+    # variables in the .sdata and .sbss sections.
+    # The symbol `__global_pointer$` is provided by the linker.
+    .option push
+    .option norelax
+    la gp, __global_pointer$
+    .option pop
+
+    # 3. Copy initialized data from ROM/Flash to RAM (.data section)
+    # This section contains global and static variables that have initial values.
+    # These values are stored in read-only memory (e.g., Flash) and need
+    # to be copied to RAM before the C program can use them.
+    # `_data_load_start` is the address where initialized data is stored in ROM/Flash.
+    # `_data_start` is the address where .data section will reside in RAM.
+    # `_data_end` is the end address of the .data section in RAM.
+    la a0, _data_load_start
+    la a1, _data_start
+    la a2, _data_end
+1:  beq a1, a2, 2f
+    lw t0, 0(a0)
+    sw t0, 0(a1)
+    addi a0, a0, 4
+    addi a1, a1, 4
+    j 1b
+2:
+
+    # 4. Clear the .bss section (uninitialized data to zero)
+    # The .bss section contains uninitialized global and static variables.
+    # The C standard requires these to be zero-initialized before main() is called.
+    # `_bss_start` is the start address of the .bss section in RAM.
+    # `_bss_end` is the end address of the .bss section in RAM.
+    la a0, _bss_start
+    la a1, _bss_end
+3:  beq a0, a1, 4f
+    sw zero, 0(a0)
+    addi a0, a0, 4
+    j 3b
+4:
+
+    # 5. Call main()
+    # After basic setup, jump to the main C function.
+    call main
+
+    # 6. Infinite loop after main returns (for bare-metal embedded)
+    # In a bare-metal system, if main() ever returns, we typically halt
+    # or go into an infinite loop to prevent unpredictable behavior.
+    j .
+.size _start, .-_start

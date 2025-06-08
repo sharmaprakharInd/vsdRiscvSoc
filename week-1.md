@@ -121,3 +121,44 @@ riscv32-unknown-elf-gcc -g -o hello.elf hello.c
 - `t0`–`t6`: **Caller-saved** registers
 - `ra`: Return address
 - `sp`: Stack pointer
+## 6- RISC-V Debugging with GDB and QEMU
+Objective: Learn to debug a RISC-V ELF binary using riscv32-unknown-elf-gdb and QEMU.
+
+Steps
+1. Compile the Program
+Compile your C code (hello.c) with debug symbols
+```bash
+qemu-riscv32 -g 1234 hello.elf
+```
+3. Debug with GDB
+```bash
+riscv32-unknown-elf-gdb hello.elf
+```
+Inside GDB:
+
+```gdb
+(gdb) target remote :1234   # Connect to QEMU
+(gdb) break main            # Set breakpoint at main()
+(gdb) continue              # Start execution
+(gdb) next                  # Step through code
+(gdb) info registers        # Inspect RISC-V registers
+(gdb) disassemble           # View assembly
+Key Commands Cheatsheet
+Command	Action
+break main	Set breakpoint at main().
+next (n)	Execute next line (step over).
+step (s)	Step into functions.
+info reg	Show all registers.
+x/s ADDRESS	Examine memory as a string.
+disassemble	View assembly of current function.
+```
+Expected Output
+After running
+```bash
+ printf("Hello, RISC-V!\n"):
+```
+Register a0 should contain 14 (bytes printed).
+
+Use disassemble to see RISC-V instructions like lui, addi, jal
+
+###Screenshots:
