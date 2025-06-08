@@ -222,3 +222,43 @@ QEMU not found: Install with sudo apt install qemu-user-static.
 
 No debug symbols: Recompile with -g flag.
 ### Screenshots:
+## 8- Exploring GCC Optimization Levels
+Objective
+Compare RISC-V assembly output (hello.s) when compiling with -O0 (no optimization) vs. -O2 (moderate optimization) and analyze key differences.
+
+Step 1: Generate Assembly Files
+Compile the same C code with different optimization levels:
+
+```bash
+# No optimization (-O0)
+riscv32-unknown-elf-gcc -S -O0 -o hello-O0.s hello.c
+
+# Moderate optimization (-O2)
+riscv32-unknown-elf-gcc -S -O2 -o hello-O2.s hello.c
+```
+Step 2: Key Differences in Assembly
+
+1. Dead Code Elimination
+-O0: Keeps unused variables/operations.
+
+-O2: Removes dead code (e.g., unused variables, redundant calculations).
+
+2. Register Allocation
+-O0: Uses memory (stack) heavily, fewer register optimizations.
+
+-O2: Maximizes register usage (e.g., a0-a7, s0-s11) to reduce memory accesses.
+
+3. Function Inlining
+-O0: Calls functions explicitly (e.g., jal for printf).
+
+-O2: Inlines small functions (replaces calls with direct code).
+
+4. Loop Unrolling
+-O0: Preserves original loop structure.
+
+-O2: Unrolls loops (reduces branch overhead).
+Compared the flies using 
+```bash 
+diff  -y hello_O0.S hello_O2.S
+```
+### Screenshot 
