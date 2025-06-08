@@ -357,6 +357,7 @@ asm volatile	Ensures assembly is not optimized/reordered.
 "=r"(var)	Output operand in a register, mapped to var.
 csrr	RISC-V CSR read instruction.
 cycle	Hardware counter for cycles since reset (CSR 0xC00).
+
 ## 10- Memory-Mapped I/O GPIO Toggle Demo
 A bare-metal C example demonstrating how to safely toggle a GPIO register using memory-mapped I/O.
 
@@ -407,3 +408,80 @@ volatile uint32_t * const creates a constant pointer to volatile data
 Pointer itself cannot be changed (const)
 
 Pointed-to data is volatile (can't be optimized)
+## 11- Linker Script 101 – RISC-V Bare-Metal
+
+This task demonstrates how to write and use a minimal **linker script** for bare-metal RISC-V development targeting the `RV32IMC` ISA. The goal is to manually control the placement of `.text` and `.data` sections in memory.
+
+Objective
+
+- Place `.text` (code) section at address `0x00000000` (typically Flash)
+- Place `.data` (initialized data) section at `0x10000000` (SRAM)
+- Fix errors caused by missing or overlapping sections (e.g., `.eh_frame`, `.sdata`, `__bss_start`)
+- Build a working ELF binary with this custom memory layout
+
+ Files
+
+- `hello.c`: A simple Hello World C program
+- `linker.ld`: Custom linker script defining memory layout
+- `README.md`: This file
+
+Linker Script Overview (`linker.ld`)
+
+```ld
+ENTRY(_start)
+
+MEMORY
+{
+  FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 256K
+  RAM (rwx)  : ORIGIN = 0x10000000, LENGTH = 64K
+}
+
+SECTIONS
+{
+  .text : 
+  {
+    *(.text*)
+    *(.rodata*)
+    *(.eh_frame*)
+  } > FLASH
+
+  .data : 
+  {
+    _data_start = .;
+    *(.data*)
+    *(.sdata*)
+    _data_end = .;
+  } > RAM AT > FLASH
+
+  .bss (NOLOAD) : 
+  {
+    _bss_start = .;
+    *(.bss*)
+    *(.sbss*)
+    *(COMMON)
+    _bss_end = .;
+  } > RAM
+
+  PROVIDE(__global_pointer$ = _data_start + 0x800);
+  PROVIDE(__bss_start = _bss_start);
+  PROVIDE(_end = .);
+}
+```
+
+Commands
+```bash
+riscv32-unknown-elf-gcc -g -o hello.elf hello.c -T linker.ld
+
+riscv32-unknown-elf-objdump -h hello.elf
+```
+Output
+The final hello.elf binary should:
+
+Have .text at 0x00000000
+
+Have .data and .bss in SRAM at 0x10000000+
+
+Link without errors or section overlap
+
+### ScreenShot
+
