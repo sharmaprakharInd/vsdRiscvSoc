@@ -162,6 +162,7 @@ Register a0 should contain 14 (bytes printed).
 Use disassemble to see RISC-V instructions like lui, addi, jal
 
 ### Screenshots:
+![Screenshot of result](Screenshots/Task6.png)
 
 We did not see the expected results as we were not using Emulator.
 This has been updated in task 7.
@@ -222,6 +223,7 @@ QEMU not found: Install with sudo apt install qemu-user-static.
 
 No debug symbols: Recompile with -g flag.
 ### Screenshots:
+![Screenshot of result](Screenshots/Task7.png)
 ## 8- Exploring GCC Optimization Levels
 Objective
 Compare RISC-V assembly output (hello.s) when compiling with -O0 (no optimization) vs. -O2 (moderate optimization) and analyze key differences.
@@ -262,6 +264,7 @@ Compared the flies using
 diff  -y hello_O0.S hello_O2.S
 ```
 ### Screenshot 
+![Screenshot of result](Screenshots/Task8.png)
 
 ## 9- Inline Assembly for Reading RISC-V Cycle Counter
 Objective: Learn to read the RISC-V cycle CSR (Counter Register) using inline assembly in C, with detailed explanations of constraints and keywords.
@@ -484,6 +487,7 @@ Have .data and .bss in SRAM at 0x10000000+
 Link without errors or section overlap
 
 ### ScreenShot
+![Screenshot of result](Screenshots/Task11.png)
 
 ## 12- Start-up Code and `crt0` – RISC-V Bare-Metal
 
@@ -584,6 +588,8 @@ Global/static variables are correctly handled.
 main() runs without an OS.
 
 Compatible with simulators like QEMU or Spike.
+### ScreenShots
+![Screenshot of result](Screenshots/Task12.png)
 
 ## 13- Demonstrate how to enable the machine-timer interrupt (MTIP) and write a simple handler in C.
 
@@ -650,7 +656,7 @@ Set the mtvec register to handle traps
 Successfully created a timer-based event system
 
 ### ScreenShots
-
+![Screenshot of result](Screenshots/Task13.png)
 ## 14- rv32imac vs rv32imc – What’s the “A”?
 
 Question
@@ -789,7 +795,7 @@ GDB Commands
 (gdb)info registers
 ```
 ### ScreenShots
-
+![Screenshot of result](Screenshots/Task15.png)
 ## 16- Using Newlib printf Without an OS
 
 Explanation and Objective:
@@ -894,6 +900,7 @@ GDB Commands
 (gdb)print shared_counter
 ```
 ### ScreenShots
+![Screenshot of result](Screenshots/Task16.png)
 
 ## 17- RISC-V Bare-Metal – Thread Scheduling and Mutex (Using qemu-riscv32, GDB, and Atomics)
 Objective
@@ -1031,4 +1038,4 @@ GDB Commands
 (gdb)print shared_counter
 ```
 ### ScreenShots
-	
+![Screenshot of result](Screenshots/Task17.png)
