@@ -693,3 +693,101 @@ Summary
 - It is essential for low-level OS and embedded systems programming.
 - It **distinguishes `rv32imac` (which supports atomics)** from `rv32imc` (which does not).
 
+## 15— Spin-lock implementation in C with inline asm fallback.
+Objective:
+Understand and implement atomic operations in bare-metal RISC-V to safely update a shared variable (shared_counter) in a multi-thread-like context (simulated).
+
+🧠 Core Concepts:
+1. Atomic Operations
+An atomic operation is one that completes as a single, uninterruptible unit.
+
+In RISC-V, atomic operations prevent race conditions when multiple "threads" access shared memory.
+
+2. LR/SC Pair (Load-Reserved / Store-Conditional)
+RISC-V uses lr.w (load-reserved) and sc.w (store-conditional) for atomic operations.
+
+These ensure a variable is only updated if no one else has written to it between the load and store.
+
+3. Race Conditions
+If two cores (or software threads) try to update shared_counter at the same time, the value may be corrupted.
+
+Atomic operations protect against this.
+
+task15.c
+
+```c
+// task15.c
+volatile int shared_counter = 0;
+
+void main() {
+    while (1) {
+        shared_counter++;
+        for (volatile int i = 0; i < 100000; ++i); // delay
+    }
+}
+```
+
+start15.S
+
+```S
+// main.c
+volatile int shared_counter = 0;
+
+void main() {
+    while (1) {
+        shared_counter++;
+        for (volatile int i = 0; i < 100000; ++i); // delay
+    }
+}
+```
+
+link15.ld
+
+```ld
+OUTPUT_ARCH(riscv)
+ENTRY(_start)
+
+MEMORY
+{
+  RAM (rwx) : ORIGIN = 0x80000000, LENGTH = 128K
+}
+
+SECTIONS
+{
+  .text : {
+    *(.text*)
+    *(.rodata*)
+  } > RAM
+
+  .data : {
+    *(.data*)
+  } > RAM
+
+  .bss : {
+    *(.bss*)
+    *(COMMON)
+  } > RAM
+}
+```
+Compiled Using
+```bash
+riscv32-unknown-elf-gcc -g -nostartfiles -T link15.ld start15.S task15.c -o task15.elf
+```
+Emulated via Qemu
+```bash
+riscv32-unknown-elf-gcc -g -nostartfiles -T link15.ld start15.S task15.c -o task15.elf
+```
+Connet gdb to qemu
+
+```bash
+riscv32-unknown-elf-gdb task15.elf
+```
+GDB Commands
+```GDB
+(gdb)target main :1234
+(gdb)b main
+(gdb)c
+(gdb)print shared_counter
+(gdb)info registers
+```
+### ScreenShots
