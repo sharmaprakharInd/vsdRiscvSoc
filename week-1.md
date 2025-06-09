@@ -693,14 +693,12 @@ Summary
 - It is essential for low-level OS and embedded systems programming.
 - It **distinguishes `rv32imac` (which supports atomics)** from `rv32imc` (which does not).
 
-## 15— Spin-lock implementation in C with inline asm fallback.
+## 15- Spin-lock implementation in C with inline asm fallback.
 Objective:
 Understand and implement atomic operations in bare-metal RISC-V to safely update a shared variable (shared_counter) in a multi-thread-like context (simulated).
-
-🧠 Core Concepts:
+Core Concepts:
 1. Atomic Operations
 An atomic operation is one that completes as a single, uninterruptible unit.
-
 In RISC-V, atomic operations prevent race conditions when multiple "threads" access shared memory.
 
 2. LR/SC Pair (Load-Reserved / Store-Conditional)
@@ -775,9 +773,9 @@ riscv32-unknown-elf-gcc -g -nostartfiles -T link15.ld start15.S task15.c -o task
 ```
 Emulated via Qemu
 ```bash
-riscv32-unknown-elf-gcc -g -nostartfiles -T link15.ld start15.S task15.c -o task15.elf
+qemu-riscv32 -machine virt -bios none -kernel task15.elf -S -gdb tcp::1234
 ```
-Connet gdb to qemu
+Connect gdb to qemu
 
 ```bash
 riscv32-unknown-elf-gdb task15.elf
@@ -792,17 +790,17 @@ GDB Commands
 ```
 ### ScreenShots
 
-## 16- Explanation and Objective
-Task 16 is a continuation of Task 15 and focuses on using atomic operations in RISC-V in a bare-metal environment to simulate synchronization between multiple threads (or cores). The setup is similar to Task 15, but Task 16 emphasizes:
+## 16- Using Newlib printf Without an OS
 
-Using atomic RISC-V instructions (lr.w, sc.w) for lock-free synchronization
-
-Observing the result of concurrent access to a shared variable (shared_counter)
-
-Using QEMU for multi-core simulation and GDB for inspection
+Explanation and Objective:
+Task 16 is a continuation of Task 15 and focuses on using atomic operations in RISC-V in a bare-metal environment to simulate synchronization between multiple threads (or cores). The setup is similar to Task 15, but Task 16 emphasizes on:
+1. Using atomic RISC-V instructions (lr.w, sc.w) for lock-free synchronization
+2. Observing the result of concurrent access to a shared variable (shared_counter)
+3. Using QEMU for multi-core simulation and GDB for inspection
 
 Goal:
-Implement atomic increment of a global variable from two functions running in parallel (simulated as threads). Verify the final value using gdb.
+1. Implement atomic increment of a global variable from two functions running in parallel (simulated as threads).
+2. Verify the final value using gdb.
 
 task16.c
 
@@ -881,9 +879,9 @@ riscv32-unknown-elf-gcc -g -nostartfiles -T link16.ld start16.S task16.c -o task
 ```
 Emulated via Qemu
 ```bash
-riscv32-unknown-elf-gcc -g -nostartfiles -T link15.ld start16.S task16.c -o task16.elf
+qemu-riscv32 -machine virt -bios none -kernel task16.elf -S -gdb tcp::1234
 ```
-Connet gdb to qemu
+Connect gdb to qemu
 
 ```bash
 riscv32-unknown-elf-gdb task16.elf
@@ -896,3 +894,141 @@ GDB Commands
 (gdb)print shared_counter
 ```
 ### ScreenShots
+
+## 17- RISC-V Bare-Metal – Thread Scheduling and Mutex (Using qemu-riscv32, GDB, and Atomics)
+Objective
+1. To understand and implement preemptive multithreading using RISC-V atomic instructions and mutual exclusion (mutex) in a bare-metal environment using QEMU and GDB.
+
+2. Create two threads (thread1, thread2) which increment a shared counter.
+
+3. Use atomic instructions (e.g. amoswap.w, lr.w, sc.w) to protect critical sections.
+
+4. Verify mutual exclusion using GDB.
+
+Concept Overview
+
+1. Atomic Operations: Prevent race conditions without disabling interrupts.
+2. Shared Resource: A global variable (e.g. shared_counter) is modified by both threads.
+3. Mutex: Implemented using a spinlock with lr.w and sc.w.
+4. Threading: Cooperative or manually invoked by jumping between functions in this task.
+
+task17.c
+```c
+volatile int lock = 0;
+volatile int shared_counter = 0;
+
+void acquire_lock(volatile int *lock) {
+    int tmp;
+    do {
+        __asm__ volatile (
+            "lr.w %0, %1\n"
+            "bnez %0, 1f\n"
+            "li t1, 1\n"
+            "sc.w t1, t1, %1\n"
+            "bnez t1, 1f\n"
+            "j 2f\n"
+            "1:\n"
+            "j acquire_lock\n"
+            "2:\n"
+            : "=&r" (tmp), "+A" (*lock)
+            :
+            : "t1"
+        );
+    } while (0);
+}
+
+void release_lock(volatile int *lock) {
+    __asm__ volatile (
+        "sw zero, %0"
+        : "=m" (*lock)
+    );
+}
+
+void thread1() {
+    acquire_lock(&lock);
+    for (int i = 0; i < 5; ++i)
+        shared_counter++;
+    release_lock(&lock);
+}
+
+void thread2() {
+    acquire_lock(&lock);
+    for (int i = 0; i < 5; ++i)
+        shared_counter++;
+    release_lock(&lock);
+}
+
+int main() {
+    thread1();
+    thread2();
+    return 0;
+}
+```
+link17.ld
+
+```ld
+ENTRY(_start)
+
+MEMORY
+{
+  RAM (rwx) : ORIGIN = 0x80000000, LENGTH = 128K
+}
+
+SECTIONS
+{
+  . = ORIGIN(RAM);
+
+  .text : {
+    *(.text*)
+  }
+
+  .rodata : {
+    *(.rodata*)
+  }
+
+  .data : {
+    *(.data*)
+  }
+
+  .bss : {
+    *(.bss COMMON)
+  }
+
+  . = . + 0x1000;
+  _stack_top = .;
+}
+```
+
+start17.S
+
+```S
+.section .text
+.global _start
+
+_start:
+    la sp, _stack_top
+    call main
+    j .
+```
+Compiled Using
+```bash
+riscv32-unknown-elf-gcc -g -nostartfiles -T link17.ld start17.S task17.c -o task17.elf
+```
+Emulated via Qemu
+```bash
+qemu-riscv32 -machine virt -bios none -kernel task17.elf -S -gdb tcp::1234
+```
+Connect gdb to qemu
+
+```bash
+riscv32-unknown-elf-gdb task17.elf
+```
+GDB Commands
+```GDB
+(gdb)target main :1234
+(gdb)b main
+(gdb)c
+(gdb)print shared_counter
+```
+### ScreenShots
+	
